@@ -63,23 +63,21 @@ const SUPABASE_ANON_KEY = "sb_publishable_EElidjP05Iermxu03Cr5UA_soLygxLc";
 // Inicializamos usando window con la S mayúscula oficial de Supabase
 const miSupabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
     // --- FUNCIÓN MÁGICA PARA OBTENER LA IP AUTOMÁTICAMENTE ---
-    async function obtenerIpAutomatica() {
-        try {
-            const respuesta = await fetch('https://ipapi.co/json/');
-            const datos = await respuesta.json();
-            if (datos.ip) {
-                document.getElementById('host_ip').value = datos.ip;
-            }
-        } catch (error) {
-            console.error("Error cargando IP:", error);
-            document.getElementById('host_ip').placeholder = "Escribe tu IP pública manualmente";
-            document.getElementById('host_ip').readOnly = false;
-            document.getElementById('host_ip').style.backgroundColor = "#333";
-            document.getElementById('host_ip').style.color = "#fff";
+async function obtenerIpAutomatica() {
+    try {
+        const respuesta = await fetch('https://ipapi.co/json/');
+        const datos = await respuesta.json();
+        if (datos.ip) {
+            document.getElementById('host_ip').value = datos.ip;
         }
-  
-        // --- FUNCIÓN PARA VER/LEER PARTIDAS ---
-        async function fetchGames() {
+    } catch (error) {
+        console.error("Error cargando IP:", error);
+        document.getElementById('host_ip').placeholder = "Escribe tu IP pública manualmente";
+        document.getElementById('host_ip').readOnly = false;
+        document.getElementById('host_ip').style.backgroundColor = "#333";
+        document.getElementById('host_ip').style.color = "#fff";
+    }
+}
             const tbody = document.getElementById('gamesTableBody');
             
             const { data, error } = await miSupabase
