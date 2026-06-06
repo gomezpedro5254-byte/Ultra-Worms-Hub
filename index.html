@@ -110,16 +110,31 @@ async function fetchGames() {
     data.forEach(game => {
         const tr = document.createElement('tr');
         const hora = new Date(game.created_at).toLocaleTimeString();
+        const ipCompleta = `${game.host_ip}:${game.host_port}`;
         
+        // Le ponemos forma de mano al cursor para que sepa que es clickeable
+        tr.style.cursor = "pointer";
+        tr.title = "Haz doble clic para copiar la IP";
+
         tr.innerHTML = `
             <td><strong>${escapeHtml(game.game_name)}</strong></td>
             <td>${escapeHtml(game.host_name)}</td>
-            <td><code>${escapeHtml(game.host_ip)}:${game.host_port}</code></td>
+            <td><code>${escapeHtml(ipCompleta)}</code></td>
             <td>${hora}</td>
         `;
+
+        // --- DETECTOR DE DOBLE CLIC ---
+        tr.addEventListener('dblclick', () => {
+            // Copia la IP y el Puerto directo a la memoria de la PC
+            navigator.clipboard.writeText(ipCompleta).then(() => {
+                alert(`¡IP de ${game.host_name} copiada! Ve a Worms, entra a Direct IP y presiona Ctrl+V.`);
+            }).catch(err => {
+                console.error('Error al copiar la IP: ', err);
+            });
+        });
+
         tbody.appendChild(tr);
     });
-}
 
 // --- FUNCIÓN PARA PUBLICAR UNA PARTIDA ---
 document.getElementById('gameForm').addEventListener('submit', async (e) => {
