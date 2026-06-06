@@ -65,20 +65,26 @@
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // --- FUNCIÓN MÁGICA PARA OBTENER LA IP AUTOMÁTICAMENTE ---
-        async function obtenerIpAutomatica() {
-            try {
-                const respuesta = await fetch('https://api.ipify.org?format=json');
-                const datos = await respuesta.json();
-                document.getElementById('host_ip').value = datos.ip;
-            } catch (error) {
-                console.error("No se pudo obtener la IP automática:", error);
-                document.getElementById('host_ip').placeholder = "Error al cargar IP. Escríbela tú.";
-                document.getElementById('host_ip').readOnly = false;
-                document.getElementById('host_ip').style.backgroundColor = "#333";
-                document.getElementById('host_ip').style.color = "#fff";
-            }
+async function obtenerIpAutomatica() {
+    try {
+        // Usamos ipapi que es un servicio alternutivo muy amigable con GitHub Pages
+        const respuesta = await fetch('https://ipapi.co/json/');
+        const datos = await respuesta.json();
+        
+        if (datos.ip) {
+            document.getElementById('host_ip').value = datos.ip;
+        } else {
+            throw new Error("No se detectó IP en la respuesta");
         }
-
+    } catch (error) {
+        console.error("Error alternativo de IP:", error);
+        // Si falla internet, le dejamos el campo abierto para que el jugador la escriba a mano
+        document.getElementById('host_ip').placeholder = "Escribe tu IP pública manualmente";
+        document.getElementById('host_ip').readOnly = false;
+        document.getElementById('host_ip').style.backgroundColor = "#333";
+        document.getElementById('host_ip').style.color = "#fff";
+    }
+}
         // --- FUNCIÓN PARA VER/LEER PARTIDAS ---
         async function fetchGames() {
             const tbody = document.getElementById('gamesTableBody');
