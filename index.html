@@ -62,7 +62,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_EElidjP05Iermxu03Cr5UA_soLygxLc";
 
 // Inicializamos usando window con la S mayúscula oficial de Supabase
 const miSupabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-    // --- FUNCIÓN MÁGICA PARA OBTENER LA IP AUTOMÁTICAMENTE ---
+  // --- FUNCIÓN MÁGICA PARA OBTENER LA IP AUTOMÁTICAMENTE ---
 async function obtenerIpAutomatica() {
     try {
         const respuesta = await fetch('https://ipapi.co/json/');
@@ -78,65 +78,68 @@ async function obtenerIpAutomatica() {
         document.getElementById('host_ip').style.color = "#fff";
     }
 }
-            const tbody = document.getElementById('gamesTableBody');
-            
-            const { data, error } = await miSupabase
-                .from('games')
-                .select('*')
-                .order('created_at', { ascending: false });
 
-            if (error) {
-                console.error("Error cargando partidas:", error);
-                tbody.innerHTML = `<tr><td colspan="4" style="color: red; text-align: center;">Error al cargar datos de Supabase.</td></tr>`;
-                return;
-            }
+// --- FUNCIÓN PARA VER/LEER PARTIDAS ---
+async function fetchGames() {
+    const tbody = document.getElementById('gamesTableBody');
+    
+    const { data, error } = await miSupabase
+        .from('games')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-            tbody.innerHTML = "";
+    if (error) {
+        console.error("Error cargando partidas:", error);
+        tbody.innerHTML = `<tr><td colspan="4" style="color: red; text-align: center;">Error al cargar datos de Supabase.</td></tr>`;
+        return;
+    }
 
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No hay partidas activas. ¡Sé el primero en crear una!</td></tr>`;
-                return;
-            }
+    tbody.innerHTML = "";
 
-            data.forEach(game => {
-                const tr = document.createElement('tr');
-                const hora = new Date(game.created_at).toLocaleTimeString();
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No hay partidas activas en este momento.</td></tr>`;
+        return;
+    }
 
-                tr.innerHTML = `
-                    <td><strong>${escapeHtml(game.game_name)}</strong></td>
-                    <td>${escapeHtml(game.host_name)}</td>
-                    <td><code>${escapeHtml(game.host_ip)}:${game.host_port}</code></td>
-                    <td>${hora}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+    data.forEach(game => {
+        const tr = document.createElement('tr');
+        const hora = new Date(game.created_at).toLocaleTimeString();
+        
+        tr.innerHTML = `
+            <td><strong>${escapeHtml(game.game_name)}</strong></td>
+            <td>${escapeHtml(game.host_name)}</td>
+            <td><code>${escapeHtml(game.host_ip)}:${game.host_port}</code></td>
+            <td>${hora}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
-        // --- FUNCIÓN PARA PUBLICAR UNA PARTIDA ---
-        document.getElementById('gameForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+// --- FUNCIÓN PARA PUBLICAR UNA PARTIDA ---
+document.getElementById('gameForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-            const game_name = document.getElementById('game_name').value;
-            const host_name = document.getElementById('host_name').value;
-            const host_ip = document.getElementById('host_ip').value;
-            const host_port = parseInt(document.getElementById('host_port').value);
+    const game_name = document.getElementById('game_name').value;
+    const host_name = document.getElementById('host_name').value;
+    const host_ip = document.getElementById('host_ip').value;
+    const host_port = parseInt(document.getElementById('host_port').value);
 
-            const { error } = await miSupabase
-                .from('games')
-                .insert([
-                    { game_name, host_name, host_ip, host_port }
-                ]);
+    const { error } = await miSupabase
+        .from('games')
+        .insert([
+            { game_name, host_name, host_ip, host_port }
+        ]);
 
-            if (error) {
-                alert("Error al publicar la partida: " + error.message);
-            } else {
-                alert("¡Partida publicada con éxito!");
-                document.getElementById('gameForm').reset();
-                document.getElementById('host_port').value = "17011";
-                obtenerIpAutomatica(); // Volver a cargar la IP automática tras limpiar
-                fetchGames();
-            }
-        });
+    if (error) {
+        alert("Error al publicar la partida: " + error.message);
+    } else {
+        alert("¡Partida publicada con éxito!");
+        document.getElementById('gameForm').reset();
+        document.getElementById('host_port').value = "17011";
+        obtenerIpAutomatica();
+        fetchGames();
+    }
+});
 
         function escapeHtml(text) {
             const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
