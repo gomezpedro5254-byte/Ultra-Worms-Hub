@@ -56,13 +56,12 @@
         </table>
     </div>
 
-    <script> // --- CONEXIÓN COMPLETA Y LIMPIA A SUPABASE ---
-    const SUPABASE_URL = "https://besjuhckvkeqsqnqxfty.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_EElidjP05Iermxu03Cr5UA_soLygxLc";
+   <script> // --- CONEXIÓN COMPLETA Y LIMPIA A SUPABASE ---
+const SUPABASE_URL = "https://besjuhckvkeqsqnqxfty.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_EElidjP05Iermxu03Cr5UA_soLygxLc";
 
-    // Inicializamos usando window para evitar que choque con duplicados ocultos
-    const miSupabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
+// Inicializamos usando window con la S mayúscula oficial de Supabase
+const miSupabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
     // --- FUNCIÓN MÁGICA PARA OBTENER LA IP AUTOMÁTICAMENTE ---
     async function obtenerIpAutomatica() {
         try {
