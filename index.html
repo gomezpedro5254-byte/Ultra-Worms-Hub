@@ -62,23 +62,29 @@ const SUPABASE_ANON_KEY = "sb_publishable_EELidjP05IermxuO3Cr5UA_soLygxLc";
 
 // Inicializamos usando window con la S mayúscula oficial de Supabase
 const miSupabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-  // --- FUNCIÓN MÁGICA PARA OBTENER LA IP AUTOMÁTICAMENTE ---
+// --- FUNCIÓN MÁGICA CON FILTRO DE IP ALTERNATIVO (IPIFY) ---
 async function obtenerIpAutomatica() {
     try {
-        const respuesta = await fetch('https://ipapi.co/json/');
+        // Usamos ipify que es ultra resistente a recargas continuas
+        const respuesta = await fetch('https://api.ipify.org?format=json');
         const datos = await respuesta.json();
+        
         if (datos.ip) {
             document.getElementById('host_ip').value = datos.ip;
+            // Dejamos el campo como lectura para que no lo borren sin querer
+            document.getElementById('host_ip').readOnly = true;
+            document.getElementById('host_ip').style.backgroundColor = "#222";
+            document.getElementById('host_ip').style.color = "#aaa";
         }
     } catch (error) {
-        console.error("Error cargando IP:", error);
+        console.error("Error cargando IP con Ipify:", error);
+        // Si todo falla, abrimos el campo para escribir a mano
         document.getElementById('host_ip').placeholder = "Escribe tu IP pública manualmente";
         document.getElementById('host_ip').readOnly = false;
         document.getElementById('host_ip').style.backgroundColor = "#333";
         document.getElementById('host_ip').style.color = "#fff";
     }
 }
-
 // --- FUNCIÓN PARA VER/LEER PARTIDAS ---
 async function fetchGames() {
     const tbody = document.getElementById('gamesTableBody');
