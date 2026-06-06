@@ -56,39 +56,36 @@
         </table>
     </div>
 
-    <script>
-        // --- CONFIGURACIÓN DE SUPABASE ---
-        const SUPABASE_URL = "https://besjuhckvkeqsqnqxfty.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_EELidjP05Iermxu03Cr5UA_soLygxLc";
+    <script> // --- CONEXIÓN COMPLETA Y LIMPIA A SUPABASE ---
+    const SUPABASE_URL = "https://besjuhckvkeqsqnqxfty.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_EElidjP05Iermxu03Cr5UA_soLygxLc";
 
-        // Inicializar el cliente de Supabase
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        // --- FUNCIÓN MÁGICA PARA OBTENER LA IP AUTOMÁTICAMENTE ---
-async function obtenerIpAutomatica() {
-    try {
-        // Usamos ipapi que es un servicio alternutivo muy amigable con GitHub Pages
-        const respuesta = await fetch('https://ipapi.co/json/');
-        const datos = await respuesta.json();
-        
-        if (datos.ip) {
-            document.getElementById('host_ip').value = datos.ip;
-        } else {
-            throw new Error("No se detectó IP en la respuesta");
+    // Inicializamos usando window para evitar que choque con duplicados ocultos
+    const miSupabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    // --- FUNCIÓN MÁGICA PARA OBTENER LA IP AUTOMÁTICAMENTE ---
+    async function obtenerIpAutomatica() {
+        try {
+            const respuesta = await fetch('https://ipapi.co/json/');
+            const datos = await respuesta.json();
+            if (datos.ip) {
+                document.getElementById('host_ip').value = datos.ip;
+            }
+        } catch (error) {
+            console.error("Error cargando IP:", error);
+            document.getElementById('host_ip').placeholder = "Escribe tu IP pública manualmente";
+            document.getElementById('host_ip').readOnly = false;
+            document.getElementById('host_ip').style.backgroundColor = "#333";
+            document.getElementById('host_ip').style.color = "#fff";
         }
-    } catch (error) {
-        console.error("Error alternativo de IP:", error);
-        // Si falla internet, le dejamos el campo abierto para que el jugador la escriba a mano
-        document.getElementById('host_ip').placeholder = "Escribe tu IP pública manualmente";
-        document.getElementById('host_ip').readOnly = false;
-        document.getElementById('host_ip').style.backgroundColor = "#333";
-        document.getElementById('host_ip').style.color = "#fff";
+    }
     }
 }
         // --- FUNCIÓN PARA VER/LEER PARTIDAS ---
         async function fetchGames() {
             const tbody = document.getElementById('gamesTableBody');
             
-            const { data, error } = await supabase
+            const { data, error } = await miSupabase
                 .from('games')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -129,7 +126,7 @@ async function obtenerIpAutomatica() {
             const host_ip = document.getElementById('host_ip').value;
             const host_port = parseInt(document.getElementById('host_port').value);
 
-            const { error } = await supabase
+            const { error } = await miSupabase
                 .from('games')
                 .insert([
                     { game_name, host_name, host_ip, host_port }
