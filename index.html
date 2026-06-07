@@ -87,6 +87,7 @@ async function obtenerIpAutomatica() {
 }
 // --- FUNCIÓN PARA VER/LEER PARTIDAS ---
 // --- FUNCIÓN PARA VER/LEER PARTIDAS (FILTRO 10 MINUTOS) ---
+// --- FUNCIÓN PARA VER/LEER PARTIDAS (FILTRO 10 MINUTOS + ENTRADA DIRECTA) ---
 async function fetchGames() {
     const tbody = document.getElementById('gamesTableBody');
     
@@ -102,6 +103,47 @@ async function fetchGames() {
     }
 
     tbody.innerHTML = "";
+
+    // Filtro temporal a prueba de balas (calcula 10 minutos reales)
+    const ahora = new Date();
+    const partidasActivas = data.filter(game => {
+        const fechaCreacion = new Date(game.created_at);
+        const minutosPasados = (ahora - fechaCreacion) / (1000 * 60);
+        return minutosPasados <= 10 && minutosPasados >= -10; 
+    });
+
+    if (partidasActivas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No hay partidas activas en este momento.</td></tr>`;
+        return;
+    }
+
+    partidasActivas.forEach(game => {
+        const tr = document.createElement('tr');
+        const hora = new Date(game.created_at).toLocaleTimeString();
+        const ipCompleta = `${game.host_ip}:${game.host_port}`;
+        
+        tr.style.cursor = "pointer";
+        tr.title = "Haz doble clic para ENTRAR directo al juego";
+
+        tr.innerHTML = `
+            <td><strong>${escapeHtml(game.game_name)}</strong></td>
+            <td>${escapeHtml(game.host_name)}</td>
+            <td><code>${escapeHtml(ipCompleta)}</code></td>
+            <td>${hora}</td>
+        `;
+
+        // --- LA MAGIA DE LA CONEXIÓN DIRECTA ---
+        tr.addEventListener('dblclick', () => {
+            // 1. Lanzamos el protocolo oficial para que la PC abra el juego
+            window.location.href = `wa://${ipCompleta}`;
+            
+            // 2. Copiamos la IP real al portapapeles por las dudas
+            navigator.clipboard.writeText(ipCompleta);
+        });
+
+        tbody.appendChild(tr);
+    });
+}
 
     // Filtro temporal a prueba de balas (calcula 10 minutos reales)
     const ahora = new Date();
