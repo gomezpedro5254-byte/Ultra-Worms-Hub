@@ -162,14 +162,12 @@ document.getElementById('gameForm').addEventListener('submit', async (e) => {
     }
 });
 
-        function escapeHtml(text) {
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-        }
+// --- EJECUTAR FUNCIONES AL CARGAR LA PÁGINA ---
+obtenerIpAutomatica();
+fetchGames();
 
-        // Ejecutar funciones al cargar la página
-        obtenerIpAutomatica();
-        fetchGames();
-    </script>
+// Refrescar la lista automáticamente cada 30 segundos
+setInterval(fetchGames, 30000);
+</script>
 </body>
 </html>
