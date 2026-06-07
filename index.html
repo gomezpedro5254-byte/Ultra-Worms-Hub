@@ -86,6 +86,7 @@ async function obtenerIpAutomatica() {
     }
 }
 // --- FUNCIÓN PARA VER/LEER PARTIDAS ---
+// --- FUNCIÓN PARA VER/LEER PARTIDAS (FILTRO 10 MINUTOS) ---
 async function fetchGames() {
     const tbody = document.getElementById('gamesTableBody');
     
@@ -102,17 +103,25 @@ async function fetchGames() {
 
     tbody.innerHTML = "";
 
-    if (data.length === 0) {
+    // Filtro temporal a prueba de balas (calcula 10 minutos reales)
+    const ahora = new Date();
+    const partidasActivas = data.filter(game => {
+        const fechaCreacion = new Date(game.created_at);
+        const minutosPasados = (ahora - fechaCreacion) / (1000 * 60);
+        // Retiene la partida solo si tiene 10 minutos o menos de vida
+        return minutosPasados <= 10 && minutosPasados >= -10; 
+    });
+
+    if (partidasActivas.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No hay partidas activas en este momento.</td></tr>`;
         return;
     }
 
-    data.forEach(game => {
+    partidasActivas.forEach(game => {
         const tr = document.createElement('tr');
         const hora = new Date(game.created_at).toLocaleTimeString();
         const ipCompleta = `${game.host_ip}:${game.host_port}`;
         
-        // Le ponemos forma de mano al cursor para que sepa que es clickeable
         tr.style.cursor = "pointer";
         tr.title = "Haz doble clic para copiar la IP";
 
@@ -123,9 +132,8 @@ async function fetchGames() {
             <td>${hora}</td>
         `;
 
-        // --- DETECTOR DE DOBLE CLIC ---
+        // Magia del doble clic para copiar
         tr.addEventListener('dblclick', () => {
-            // Copia la IP y el Puerto directo a la memoria de la PC
             navigator.clipboard.writeText(ipCompleta).then(() => {
                 alert(`¡IP de ${game.host_name} copiada! Ve a Worms, entra a Direct IP y presiona Ctrl+V.`);
             }).catch(err => {
