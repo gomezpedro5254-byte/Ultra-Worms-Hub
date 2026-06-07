@@ -1,126 +1,99 @@
-// --- 1. CONEXIÓN A SUPABASE ---
-// ¡ATENCIÓN JUAN! Pega aquí tu URL y tu Key real de Supabase:
-const supaUrl = 'https://besjuhckvkeqsqnqxfty.supabase.co/rest/v1/';
-const supaKey = 'sb_publishable_EELidjP05IermxuO3Cr5UA_soLygxLc';
-const miSupabase = supabase.createClient(supaUrl, supaKey);
-
-// --- 2. OBTENER IP AUTOMÁTICA (IPIFY) ---
-async function obtenerIpAutomatica() {
-    const campoIp = document.getElementById('host_ip');
-    try {
-        const respuesta = await fetch('https://api.ipify.org?format=json');
-        const datos = await respuesta.json();
-        
-        if (datos.ip) {
-            // Guarda la IP real oculta
-            campoIp.dataset.ipVerdadera = datos.ip;
-            // Muestra el cartel verde
-            campoIp.value = "✔️ Tu IP ha sido cargada automáticamente";
-            campoIp.readOnly = true;
-            campoIp.style.backgroundColor = "#222";
-            campoIp.style.color = "#4CAF50";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultra Worms Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #fff;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
         }
-    } catch (error) {
-        console.error("Error cargando IP con Ipify:", error);
-        campoIp.dataset.ipVerdadera = "";
-        campoIp.value = "";
-        campoIp.placeholder = "⚠️ Falló la carga. Escribe tu IP manualmente";
-        campoIp.readOnly = false;
-        campoIp.style.backgroundColor = "#333";
-        campoIp.style.color = "#fff";
-    }
-}
+        h1, h2, h3 { text-align: center; color: #FFD700; }
+        .container { background-color: #2a2a2a; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin: 5px 0 15px 0; background-color: #333; color: white; border: 1px solid #444; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #FFD700; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        button:hover { background-color: #e6c200; }
+        .btn-refresh { width: auto; background-color: #4CAF50; color: white; margin-bottom: 15px; }
+        .btn-refresh:hover { background-color: #45a049; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #444; }
+        th { color: #FFD700; }
+        tr:hover { background-color: #333; }
+    </style>
+</head>
+<body>
+    <h1>🐛 Ultra Worms Hub 🐛</h1>
+    <h3 style="font-weight: normal; margin-top: -10px;">Lista de partidas activas para Worms Armageddon</h3>
 
-// --- 3. LEER PARTIDAS (10 MINUTOS + ENTRADA DIRECTA + IP OCULTA) ---
-async function fetchGames() {
-    const tbody = document.getElementById('gamesTableBody');
-    
-    const { data, error } = await miSupabase
-        .from('games')
-        .select('*')
-        .order('created_at', { ascending: false });
+    <div class="container">
+        <h2>Publicar Nueva Partida</h2>
+        <form id="gameForm">
+            <input type="text" id="game_name" placeholder="Nombre de la partida (ej: ¡Solo inters!)" required maxlength="30">
+            <input type="text" id="host_name" placeholder="Tu Nickname" required maxlength="20">
+            <input type="text" id="host_ip" placeholder="Cargando tu IP pública..." readonly style="background-color: #222;">
+            <input type="number" id="host_port" value="17011" required>
+            <button type="submit">Publicar Partida</button>
+        </form>
+    </div>
 
-    if (error) {
-        console.error("Error cargando partidas:", error);
-        tbody.innerHTML = `<tr><td colspan="4" style="color: red; text-align: center;">Error al cargar datos de Supabase.</td></tr>`;
-        return;
-    }
+    <div class="container">
+        <h2>Partidas Disponibles</h2>
+        <button class="btn-refresh" onclick="fetchGames()">🔄 Actualizar Lista</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Partida</th>
+                    <th>Host (Creador)</th>
+                    <th>Dirección IP / Puerto</th>
+                    <th>Creada hace</th>
+                </tr>
+            </thead>
+            <tbody id="gamesTableBody">
+                <tr><td colspan="4" style="text-align: center;">Cargando partidas...</td></tr>
+            </tbody>
+        </table>
+    </div>
 
-    tbody.innerHTML = "";
+    <script>
+        // --- 1. CONEXIÓN A SUPABASE ---
+        // Pega tu URL real aquí, la Key ya te la dejé puesta:
+        const supaUrl = 'TU_URL_DE_SUPABASE_AQUI';
+        const supaKey = 'sb_publishable_EELidjP05IermxuO3Cr5UA_soLygxLc';
+        const miSupabase = supabase.createClient(supaUrl, supaKey);
 
-    // Filtro temporal: solo muestra partidas creadas hace 10 minutos o menos
-    const ahora = new Date();
-    const partidasActivas = data.filter(game => {
-        const fechaCreacion = new Date(game.created_at);
-        const minutosPasados = (ahora - fechaCreacion) / (1000 * 60);
-        return minutosPasados <= 10 && minutosPasados >= -10; 
-    });
+        // --- 2. OBTENER IP AUTOMÁTICA (IPIFY) ---
+        async function obtenerIpAutomatica() {
+            const campoIp = document.getElementById('host_ip');
+            try {
+                const respuesta = await fetch('https://api.ipify.org?format=json');
+                const datos = await respuesta.json();
+                
+                if (datos.ip) {
+                    campoIp.dataset.ipVerdadera = datos.ip;
+                    campoIp.value = "✔️ Tu IP ha sido cargada automáticamente";
+                    campoIp.readOnly = true;
+                    campoIp.style.backgroundColor = "#222";
+                    campoIp.style.color = "#4CAF50";
+                }
+            } catch (error) {
+                console.error("Error cargando IP con Ipify:", error);
+                campoIp.dataset.ipVerdadera = "";
+                campoIp.value = "";
+                campoIp.placeholder = "⚠️ Falló la carga. Escribe tu IP manualmente";
+                campoIp.readOnly = false;
+                campoIp.style.backgroundColor = "#333";
+                campoIp.style.color = "#fff";
+            }
+        }
 
-    if (partidasActivas.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No hay partidas activas en este momento.</td></tr>`;
-        return;
-    }
-
-    partidasActivas.forEach(game => {
-        const tr = document.createElement('tr');
-        const hora = new Date(game.created_at).toLocaleTimeString();
-        const ipCompleta = `${game.host_ip}:${game.host_port}`;
-        
-        tr.style.cursor = "pointer";
-        tr.title = "Haz doble clic para ENTRAR directo al juego";
-
-        tr.innerHTML = `
-            <td><strong>${escapeHtml(game.game_name)}</strong></td>
-            <td>${escapeHtml(game.host_name)}</td>
-            <td><span style="color: #4CAF50; font-weight: bold;">🎮 Oculta (Doble clic)</span></td>
-            <td>${hora}</td>
-        `;
-
-        // Doble clic: abre el juego y copia la IP por las dudas
-        tr.addEventListener('dblclick', () => {
-            window.location.href = `wa://${ipCompleta}`;
-            navigator.clipboard.writeText(ipCompleta);
-        });
-
-        tbody.appendChild(tr);
-    });
-}
-
-// --- 4. PUBLICAR PARTIDA ---
-document.getElementById('gameForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const game_name = document.getElementById('game_name').value;
-    const host_name = document.getElementById('host_name').value;
-    
-    // Busca la IP oculta; si falla, usa lo que escribió el usuario
-    const campoIp = document.getElementById('host_ip');
-    const host_ip = campoIp.dataset.ipVerdadera ? campoIp.dataset.ipVerdadera : campoIp.value;
-    const host_port = parseInt(document.getElementById('host_port').value);
-
-    const { error } = await miSupabase
-        .from('games')
-        .insert([
-            { game_name, host_name, host_ip, host_port }
-        ]);
-
-    if (error) {
-        alert("Error al publicar la partida: " + error.message);
-    } else {
-        document.getElementById('gameForm').reset();
-        document.getElementById('host_port').value = "17011";
-        obtenerIpAutomatica();
-        fetchGames();
-    }
-});
-
-// --- 5. FUNCIÓN DE SEGURIDAD ---
-function escapeHtml(text) {
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-}
-
-// --- 6. ARRANQUE DEL SISTEMA ---
-obtenerIpAutomatica();
-fetchGames();
-setInterval(fetchGames, 30000);
+        // --- 3. LEER PARTIDAS (10 MINUTOS + ENTRADA DIRECTA + IP OCULTA) ---
+        async function fetchGames() {
+            const tbody = document.getElementById('gamesTableBody');
+            
+            const { data, error } = await mi
