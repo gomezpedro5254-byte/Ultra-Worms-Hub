@@ -1,93 +1,37 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Worms Hub</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: #fff; max-width: 800px; margin: 0 auto; padding: 20px; }
-        h1, h2 { color: #ffcc00; text-align: center; }
-        .container { background-color: #2a2a2a; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.5); margin-bottom: 20px; }
-        form { display: grid; gap: 10px; }
-        input { padding: 10px; border-radius: 4px; border: 1px solid #444; background-color: #333; color: white; }
-        button { background-color: #ffcc00; color: #1a1a1a; border: none; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; }
-        button:hover { background-color: #e6b800; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #444; }
-        th { background-color: #333; color: #ffcc00; }
-        tr:hover { background-color: #383838; }
-        .refresh-btn { background-color: #4CAF50; color: white; margin-bottom: 10px; }
-    </style>
-</head>
-<body>
+// --- 1. CONEXIÓN A SUPABASE ---
+// ¡ATENCIÓN JUAN! Pega aquí tu URL y tu Key real de Supabase:
+const supaUrl = 'TU_URL_DE_SUPABASE_AQUI';
+const supaKey = 'TU_KEY_DE_SUPABASE_AQUI';
+const miSupabase = supabase.createClient(supaUrl, supaKey);
 
-    <h1>🐛 Ultra Worms Hub 🐛</h1>
-    <p style="text-align: center;">Lista de partidas activas para Worms Armageddon</p>
-
-    <div class="container">
-        <h2>Publicar Nueva Partida</h2>
-        <form id="gameForm">
-            <input type="text" id="game_name" placeholder="Nombre de la partida (ej: ¡Solo inters!)" required>
-            <input type="text" id="host_name" placeholder="Tu Nickname" required>
-            <input type="text" id="host_ip" placeholder="Cargando tu IP pública..." required readonly style="background-color: #222; color: #888;">
-            <input type="number" id="host_port" placeholder="Puerto (Por defecto 17011)" value="17011" required>
-            <button type="submit">Publicar Partida</button>
-        </form>
-    </div>
-
-    <div class="container">
-        <h2>Partidas Disponibles</h2>
-        <button class="refresh-btn" onclick="fetchGames()">🔄 Actualizar Lista</button>
-        <table>
-            <thead>
-                <tr>
-                    <th>Partida</th>
-                    <th>Host (Creador)</th>
-                    <th>Dirección IP / Puerto</th>
-                    <th>Creada hace</th>
-                </tr>
-            </thead>
-            <tbody id="gamesTableBody">
-                <tr>
-                    <td colspan="4" style="text-align: center;">Cargando partidas...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-   <script> // --- CONEXIÓN COMPLETA Y LIMPIA A SUPABASE ---
-const SUPABASE_URL = "https://besjuhckvkeqsqnqxfty.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_EELidjP05IermxuO3Cr5UA_soLygxLc";
-
-// Inicializamos usando window con la S mayúscula oficial de Supabase
-const miSupabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-// --- FUNCIÓN MÁGICA CON FILTRO DE IP ALTERNATIVO (IPIFY) ---
+// --- 2. OBTENER IP AUTOMÁTICA (IPIFY) ---
 async function obtenerIpAutomatica() {
+    const campoIp = document.getElementById('host_ip');
     try {
-        // Usamos ipify que es ultra resistente a recargas continuas
         const respuesta = await fetch('https://api.ipify.org?format=json');
         const datos = await respuesta.json();
         
         if (datos.ip) {
-            document.getElementById('host_ip').value = datos.ip;
-            // Dejamos el campo como lectura para que no lo borren sin querer
-            document.getElementById('host_ip').readOnly = true;
-            document.getElementById('host_ip').style.backgroundColor = "#222";
-            document.getElementById('host_ip').style.color = "#aaa";
+            // Guarda la IP real oculta
+            campoIp.dataset.ipVerdadera = datos.ip;
+            // Muestra el cartel verde
+            campoIp.value = "✔️ Tu IP ha sido cargada automáticamente";
+            campoIp.readOnly = true;
+            campoIp.style.backgroundColor = "#222";
+            campoIp.style.color = "#4CAF50";
         }
     } catch (error) {
         console.error("Error cargando IP con Ipify:", error);
-        // Si todo falla, abrimos el campo para escribir a mano
-        document.getElementById('host_ip').placeholder = "Escribe tu IP pública manualmente";
-        document.getElementById('host_ip').readOnly = false;
-        document.getElementById('host_ip').style.backgroundColor = "#333";
-        document.getElementById('host_ip').style.color = "#fff";
+        campoIp.dataset.ipVerdadera = "";
+        campoIp.value = "";
+        campoIp.placeholder = "⚠️ Falló la carga. Escribe tu IP manualmente";
+        campoIp.readOnly = false;
+        campoIp.style.backgroundColor = "#333";
+        campoIp.style.color = "#fff";
     }
 }
-// --- FUNCIÓN PARA VER/LEER PARTIDAS ---
-// --- FUNCIÓN PARA VER/LEER PARTIDAS (FILTRO 10 MINUTOS) ---
-// --- FUNCIÓN PARA VER/LEER PARTIDAS (FILTRO 10 MINUTOS + ENTRADA DIRECTA) ---
+
+// --- 3. LEER PARTIDAS (10 MINUTOS + ENTRADA DIRECTA + IP OCULTA) ---
 async function fetchGames() {
     const tbody = document.getElementById('gamesTableBody');
     
@@ -104,7 +48,7 @@ async function fetchGames() {
 
     tbody.innerHTML = "";
 
-    // Filtro temporal a prueba de balas (calcula 10 minutos reales)
+    // Filtro temporal: solo muestra partidas creadas hace 10 minutos o menos
     const ahora = new Date();
     const partidasActivas = data.filter(game => {
         const fechaCreacion = new Date(game.created_at);
@@ -128,16 +72,13 @@ async function fetchGames() {
         tr.innerHTML = `
             <td><strong>${escapeHtml(game.game_name)}</strong></td>
             <td>${escapeHtml(game.host_name)}</td>
-            <td><code>${escapeHtml(ipCompleta)}</code></td>
+            <td><span style="color: #4CAF50; font-weight: bold;">🎮 Oculta (Doble clic)</span></td>
             <td>${hora}</td>
         `;
 
-        // --- LA MAGIA DE LA CONEXIÓN DIRECTA ---
+        // Doble clic: abre el juego y copia la IP por las dudas
         tr.addEventListener('dblclick', () => {
-            // 1. Lanzamos el protocolo oficial para que la PC abra el juego
             window.location.href = `wa://${ipCompleta}`;
-            
-            // 2. Copiamos la IP real al portapapeles por las dudas
             navigator.clipboard.writeText(ipCompleta);
         });
 
@@ -145,54 +86,16 @@ async function fetchGames() {
     });
 }
 
-    // Filtro temporal a prueba de balas (calcula 10 minutos reales)
-    const ahora = new Date();
-    const partidasActivas = data.filter(game => {
-        const fechaCreacion = new Date(game.created_at);
-        const minutosPasados = (ahora - fechaCreacion) / (1000 * 60);
-        // Retiene la partida solo si tiene 10 minutos o menos de vida
-        return minutosPasados <= 10 && minutosPasados >= -10; 
-    });
-
-    if (partidasActivas.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No hay partidas activas en este momento.</td></tr>`;
-        return;
-    }
-
-    partidasActivas.forEach(game => {
-        const tr = document.createElement('tr');
-        const hora = new Date(game.created_at).toLocaleTimeString();
-        const ipCompleta = `${game.host_ip}:${game.host_port}`;
-        
-        tr.style.cursor = "pointer";
-        tr.title = "Haz doble clic para copiar la IP";
-
-        tr.innerHTML = `
-            <td><strong>${escapeHtml(game.game_name)}</strong></td>
-            <td>${escapeHtml(game.host_name)}</td>
-            <td><code>${escapeHtml(ipCompleta)}</code></td>
-            <td>${hora}</td>
-        `;
-
-        // Magia del doble clic para copiar
-        tr.addEventListener('dblclick', () => {
-            navigator.clipboard.writeText(ipCompleta).then(() => {
-                alert(`¡IP de ${game.host_name} copiada! Ve a Worms, entra a Direct IP y presiona Ctrl+V.`);
-            }).catch(err => {
-                console.error('Error al copiar la IP: ', err);
-            });
-        });
-
-        tbody.appendChild(tr);
-    });
-}
-// --- FUNCIÓN PARA PUBLICAR UNA PARTIDA ---
+// --- 4. PUBLICAR PARTIDA ---
 document.getElementById('gameForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const game_name = document.getElementById('game_name').value;
     const host_name = document.getElementById('host_name').value;
-    const host_ip = document.getElementById('host_ip').value;
+    
+    // Busca la IP oculta; si falla, usa lo que escribió el usuario
+    const campoIp = document.getElementById('host_ip');
+    const host_ip = campoIp.dataset.ipVerdadera ? campoIp.dataset.ipVerdadera : campoIp.value;
     const host_port = parseInt(document.getElementById('host_port').value);
 
     const { error } = await miSupabase
@@ -204,24 +107,20 @@ document.getElementById('gameForm').addEventListener('submit', async (e) => {
     if (error) {
         alert("Error al publicar la partida: " + error.message);
     } else {
-        alert("¡Partida publicada con éxito!");
         document.getElementById('gameForm').reset();
         document.getElementById('host_port').value = "17011";
         obtenerIpAutomatica();
         fetchGames();
     }
 });
-// --- FUNCIÓN AUXILIAR DE SEGURIDAD ---
+
+// --- 5. FUNCIÓN DE SEGURIDAD ---
 function escapeHtml(text) {
     const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
     return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
-// --- EJECUTAR FUNCIONES AL CARGAR LA PÁGINA ---
+
+// --- 6. ARRANQUE DEL SISTEMA ---
 obtenerIpAutomatica();
 fetchGames();
-
-// Refrescar la lista automáticamente cada 30 segundos
 setInterval(fetchGames, 30000);
-</script>
-</body>
-</html>
