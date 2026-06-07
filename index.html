@@ -63,7 +63,7 @@
     <script>
         // --- 1. CONEXIÓN A SUPABASE ---
         // Pega tu URL real aquí, la Key ya te la dejé puesta:
-        const supaUrl = 'TU_URL_DE_SUPABASE_AQUI';
+        const supaUrl = 'https://besjuhckvkeqsqnqxfty.supabase.co/rest/v1/';
         const supaKey = 'sb_publishable_EELidjP05IermxuO3Cr5UA_soLygxLc';
         const miSupabase = supabase.createClient(supaUrl, supaKey);
 
@@ -96,4 +96,92 @@
         async function fetchGames() {
             const tbody = document.getElementById('gamesTableBody');
             
-            const { data, error } = await mi
+            const { data, error } = await miSupabase
+                .from('games')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("Error cargando partidas:", error);
+                tbody.innerHTML = `<tr><td colspan="4" style="color: red; text-align: center;">Error al cargar datos de Supabase.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+
+            const ahora = new Date();
+            const partidasActivas = data.filter(game => {
+                const fechaCreacion = new Date(game.created_at);
+                const minutosPasados = (ahora - fechaCreacion) / (1000 * 60);
+                return minutosPasados <= 10 && minutosPasados >= -10; 
+            });
+
+            if (partidasActivas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No hay partidas activas en este momento.</td></tr>`;
+                return;
+            }
+
+            partidasActivas.forEach(game => {
+                const tr = document.createElement('tr');
+                const hora = new Date(game.created_at).toLocaleTimeString();
+                const ipCompleta = `${game.host_ip}:${game.host_port}`;
+                
+                tr.style.cursor = "pointer";
+                tr.title = "Haz doble clic para ENTRAR directo al juego";
+
+                tr.innerHTML = `
+                    <td><strong>${escapeHtml(game.game_name)}</strong></td>
+                    <td>${escapeHtml(game.host_name)}</td>
+                    <td><span style="color: #4CAF50; font-weight: bold;">🎮 Oculta (Doble clic)</span></td>
+                    <td>${hora}</td>
+                `;
+
+                tr.addEventListener('dblclick', () => {
+                    window.location.href = `wa://${ipCompleta}`;
+                    navigator.clipboard.writeText(ipCompleta);
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 4. PUBLICAR PARTIDA ---
+        document.getElementById('gameForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const game_name = document.getElementById('game_name').value;
+            const host_name = document.getElementById('host_name').value;
+            
+            const campoIp = document.getElementById('host_ip');
+            const host_ip = campoIp.dataset.ipVerdadera ? campoIp.dataset.ipVerdadera : campoIp.value;
+            const host_port = parseInt(document.getElementById('host_port').value);
+
+            const { error } = await miSupabase
+                .from('games')
+                .insert([
+                    { game_name, host_name, host_ip, host_port }
+                ]);
+
+            if (error) {
+                alert("Error al publicar la partida: " + error.message);
+            } else {
+                document.getElementById('gameForm').reset();
+                document.getElementById('host_port').value = "17011";
+                obtenerIpAutomatica();
+                fetchGames();
+            }
+        });
+
+        // --- 5. FUNCIÓN DE SEGURIDAD ---
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // --- 6. ARRANQUE DEL SISTEMA ---
+        obtenerIpAutomatica();
+        fetchGames();
+        setInterval(fetchGames, 30000);
+    </script>
+</body>
+</html>
